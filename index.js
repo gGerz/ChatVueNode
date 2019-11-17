@@ -9,7 +9,10 @@ app.get('/', function (request, response) {
   response.sendFile(__dirname +'/index.html');
 });
 
+app.use(express.static('public'));
+
 let clients = [];
+let chatMessages = []
 
 io.sockets.on('connection', function(socket){
   console.log('Пользователь зашел в беседу')
@@ -21,6 +24,7 @@ io.sockets.on('connection', function(socket){
     clientInfo.clientId = socket.id;
     clients.push(clientInfo);
     io.sockets.emit('addUserInList', clientInfo)
+    io.sockets.emit('setData', clients, chatMessages)
   });
 
   socket.on('disconnect', function (data) {
@@ -30,13 +34,21 @@ io.sockets.on('connection', function(socket){
 
       if(client.clientId === socket.id){
         clients.splice(i,1);
+        io.sockets.emit('setUserList', clients)
         break;
       }
     }
   });
 
-  socket.on('sendMessage', function (newMessage) {
-    io.sockets.emit('addMessageInChat', newMessage)
+  socket.on('sendMessage', function (newMessage, username) {
+    let newDate = new Date()
+    let date = `${newDate.getMonth()}.${newDate.getDate()} ${newDate.getHours()}:${newDate.getMinutes()}`
+    io.sockets.emit('addMessageInChat', newMessage, username, date)
+    chatMessages.unshift({
+      user: username,
+      message: newMessage,
+      date: date
+    })
   });
 
 
