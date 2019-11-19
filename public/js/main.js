@@ -17,6 +17,9 @@ let vueApp = new Vue({
       localStorage.setItem('NodeVueChatAuthName', this.username)
       this.isAuthStatus = true
     },
+    setAnonim () {
+      this.isAuthStatus = true
+    },
     logOut () {
       localStorage.removeItem('NodeVueChatAuthName')
       this.isAuthStatus = false
@@ -31,7 +34,7 @@ let vueApp = new Vue({
     },
 
     sendMessage () {
-      this.socket.emit('sendMessage', this.newMessage, this.username)
+      this.socket.emit('sendMessage', this.newMessage, this.username.length > 0 ? this.username : 'Аноним')
     }
   },
 
@@ -51,14 +54,28 @@ let vueApp = new Vue({
       self.newMessage = ''
     })
 
+    this.socket.on('sendNotification', function (message, username) {
+      if (self.username !== username){
+        let notification = new Notification(`${username} оставил новое сообщение:`,
+          { body: message, dir: 'auto', icon: 'icon.jpg' }
+        );
+      }
+    })
+
 
     this.socket.on('addUserInList', function (user) {
-      self.userList.push(user)
+      self.userList.push(self.username !== '' ? self.username : user)
+    })
+
+    this.socket.on('setUserList', function (userList) {
+      console.log(userList)
+      self.userList = userList
+
     })
 
     // Получаем инфу при заходе на страницу
     this.socket.on('connect', function (data) {
-      self.socket.emit('storeClientInfo', { customId:"000CustomIdHere0000" });
+      self.socket.emit('storeClientInfo', localStorage.getItem('NodeVueChatAuthName') || 'Аноним');
     });
 
     // Получаем все необходимые данные от сервера
@@ -72,5 +89,9 @@ let vueApp = new Vue({
 
   mounted () {
     this.checkAuthStatus()
+
+    Notification.requestPermission(function(permission){
+
+    });
   }
 })

@@ -18,13 +18,14 @@ io.sockets.on('connection', function(socket){
   console.log('Пользователь зашел в беседу')
 
 
-  socket.on('storeClientInfo', function (data) {
+  socket.on('storeClientInfo', function (anonim) {
     var clientInfo = {};
-    clientInfo.customId = data.customId;
+    clientInfo.username = anonim
     clientInfo.clientId = socket.id;
     clients.push(clientInfo);
     io.sockets.emit('addUserInList', clientInfo)
     io.sockets.emit('setData', clients, chatMessages)
+    io.sockets.emit('setUserList', clients)
   });
 
   socket.on('disconnect', function (data) {
@@ -38,12 +39,14 @@ io.sockets.on('connection', function(socket){
         break;
       }
     }
+    io.sockets.emit('setUserList', clients)
   });
 
   socket.on('sendMessage', function (newMessage, username) {
     let newDate = new Date()
     let date = `${newDate.getMonth()}.${newDate.getDate()} ${newDate.getHours()}:${newDate.getMinutes()}`
     io.sockets.emit('addMessageInChat', newMessage, username, date)
+    io.sockets.emit('sendNotification', newMessage, username)
     chatMessages.unshift({
       user: username,
       message: newMessage,
